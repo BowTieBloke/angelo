@@ -1,4 +1,5 @@
 package de.arschwasser.angelo.player
+/*
 
 import android.content.Context
 import com.spotify.android.appremote.api.ConnectionParams
@@ -32,3 +33,4 @@ class SpotifyPremiumService : MusicService {
             })
         }
 }
+*/
