@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 
+
 object Updater {
     data class Info(val versionCode: Int, val versionName: String, val apkUrl: String, val changelog: String)
     suspend fun check(context: Context): Info? = withContext(Dispatchers.IO) {
