@@ -35,7 +35,7 @@ android {
 
 dependencies {
     // --- Spotify --------------------------------------------------------------
-    implementation "com.spotify.android:spotify-app-remote:0.8.0"   // App-Remote SDK
+    // App-Remote SDK
     implementation "com.spotify.android:auth:1.2.5"
     // login flow (already in repo but keep versions in sync)
 
