@@ -19,6 +19,7 @@ android {
 
     buildFeatures {
         compose true
+        buildConfig = true
     }
 
     composeOptions { kotlinCompilerExtensionVersion "1.5.13" }
@@ -30,6 +31,13 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
+    }
+}
+
+repositories {
+    // <-- add this block just above dependencies
+    flatDir {
+        dirs("libs")          // app/libs  (relative to the module!)
     }
 }
 
