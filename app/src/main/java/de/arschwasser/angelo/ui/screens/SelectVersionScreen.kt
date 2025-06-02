@@ -18,6 +18,7 @@ import de.arschwasser.angelo.core.SongDatabase
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectVersionScreen(nav: NavHostController) {
     val ctx = LocalContext.current

@@ -4,7 +4,7 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
         maven { url "https://maven.pkg.jetbrains.space/public/p/compose/dev" }
-        flatDir { dirs "libs" }      // this line lets Gradle see the AAR
+        flatDir { dirs("$rootDir/app/libs") }
     }
     plugins {
         id "com.android.application" version "8.1.1"  // or 8.1.0 – must match your wrapper

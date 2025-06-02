@@ -18,6 +18,7 @@ import de.arschwasser.angelo.qrscanner.QRScanner
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(nav: NavHostController) {
     val ctx = LocalContext.current

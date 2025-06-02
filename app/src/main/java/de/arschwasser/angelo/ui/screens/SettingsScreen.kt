@@ -11,6 +11,7 @@ import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.player.MusicServiceRegistry
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(nav: NavHostController) {
     val ctx = LocalContext.current

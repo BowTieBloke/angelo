@@ -34,13 +34,6 @@ android {
     }
 }
 
-repositories {
-    // <-- add this block just above dependencies
-    flatDir {
-        dirs("libs")          // app/libs  (relative to the module!)
-    }
-}
-
 dependencies {
     // --- Spotify --------------------------------------------------------------
     // App-Remote SDK
