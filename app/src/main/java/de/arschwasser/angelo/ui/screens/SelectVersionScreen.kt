@@ -34,7 +34,7 @@ fun SelectVersionScreen(nav: NavHostController) {
     }
 
     Scaffold(
-        topBar = { SmallTopAppBar(title = { Text("Select game version") }) }
+        topBar = { TopAppBar(title = { Text("Select game version") }) }
     ) { padding ->
         Column(
             modifier = Modifier

@@ -2,8 +2,8 @@ package de.arschwasser.angelo.player
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import de.arschwasser.angelo.model.Song
+import androidx.core.net.toUri
 
 class SpotifyFreeService : MusicService {
     override val name = "Spotify Free (flash)"
@@ -13,7 +13,7 @@ class SpotifyFreeService : MusicService {
 
     override suspend fun play(context: Context, song: Song): Boolean {
         val uri = song.spotify ?: return false
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+        val intent = Intent(Intent.ACTION_VIEW, uri.toUri()).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_NO_ANIMATION)
         }
         context.startActivity(intent)

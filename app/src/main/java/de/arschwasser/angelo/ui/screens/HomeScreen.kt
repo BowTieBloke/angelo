@@ -14,6 +14,7 @@ import androidx.navigation.NavHostController
 import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.core.SongDatabase
 import de.arschwasser.angelo.player.MusicServiceRegistry
+import de.arschwasser.angelo.qrscanner.PermissionedQRScanner
 import de.arschwasser.angelo.qrscanner.QRScanner
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -63,7 +64,7 @@ fun HomeScreen(nav: NavHostController) {
                     Text("Scan")
                 }
             } else {
-                QRScanner { qr ->
+                PermissionedQRScanner { qr ->
                     scanning = false
                     scope.launch {
                         val code = if (qr.contains("c=")) qr.substringAfter("c=") else qr

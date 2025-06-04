@@ -21,23 +21,26 @@ fun SettingsScreen(nav: NavHostController) {
     val services = MusicServiceRegistry.availableServices(ctx)
 
     Scaffold(
-        topBar = { SmallTopAppBar(title = { Text("Settings") }) }
-    ) { padding ->
+        topBar = { TopAppBar(title = { Text("Settings") }) }) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Text("Version", style = MaterialTheme.typography.titleMedium)
+            Button(onClick = {
+                nav.navigate("selectVersion")
+            }) {
+                Text("change")
+            }
             Text("Preferred service", style = MaterialTheme.typography.titleMedium)
             services.forEach { srv ->
                 Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                     RadioButton(
-                        selected = srv.name == currentService,
-                        onClick = {
+                        selected = srv.name == currentService, onClick = {
                             scope.launch { pref.setService(srv.name) }
-                        }
-                    )
+                        })
                     Text("${srv.name}${if (!srv.recommended) " (not recommended – screen flashes)" else ""}")
                 }
             }
