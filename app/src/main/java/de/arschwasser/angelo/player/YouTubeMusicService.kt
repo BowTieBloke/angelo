@@ -1,14 +1,14 @@
 package de.arschwasser.angelo.player
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.support.v4.media.MediaBrowserCompat
-import android.support.v4.media.session.MediaControllerCompat
 import androidx.core.net.toUri
+import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.model.Song
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 class YouTubeMusicService : MusicService {
 
@@ -22,66 +22,40 @@ class YouTubeMusicService : MusicService {
         false
     }
 
-    /**
-     * Try the hidden MediaBrowser route first; if that fails,
-     * fall back to the normal ACTION_VIEW intent.
-     */
     override suspend fun play(context: Context, song: Song): Boolean {
-        val uri = song.youtube?.toUri() ?: return false
-
-        /* ---------- hidden playback (no UI) ---------- */
-        val hiddenSucceeded = suspendCancellableCoroutine<Boolean> { cont ->
-            val component = ComponentName(
-                "com.google.android.apps.youtube.music",
-                "com.google.android.apps.youtube.music.MediaPlaybackService"
-            )
-
-            // 1) declare the var first so the callback can see it
-            lateinit var mediaBrowser: MediaBrowserCompat
-
-            // 2) build the callback, referencing the var
-            val callback = object : MediaBrowserCompat.ConnectionCallback() {
-
-                override fun onConnected() {
-                    runCatching {
-                        val controller = MediaControllerCompat(
-                            context,
-                            mediaBrowser.sessionToken
-                        )
-                        controller.transportControls.playFromUri(uri, null)
-                    }
-                    mediaBrowser.disconnect()
-                    if (cont.isActive) cont.resume(true)
+        return try {
+            // 1. Open the song in YouTube Music (on main thread)
+            withContext(Dispatchers.Main) {
+                val ytMusicIntent = Intent(Intent.ACTION_VIEW).apply {
+                    data = song.youtube?.toUri()
+                    setPackage("com.google.android.apps.youtube.music")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-
-                override fun onConnectionSuspended() {
-                    mediaBrowser.disconnect()
-                    if (cont.isActive) cont.resume(false)
-                }
-
-                override fun onConnectionFailed() {
-                    mediaBrowser.disconnect()
-                    if (cont.isActive) cont.resume(false)
-                }
+                context.startActivity(ytMusicIntent)
             }
 
-            // 3) instantiate the browser *after* the callback exists
-            mediaBrowser = MediaBrowserCompat(context, component, callback, null)
+            // 2. Get the delay preference (suspending)
+            val pref = PreferencesManager(context)
+            val delayMs = pref.serviceDelayFlow.first()
 
-            runCatching { mediaBrowser.connect() }
-                .onFailure { if (cont.isActive) cont.resume(false) }
+            // 3. Wait for the delay (on background thread)
+            delay(delayMs)
 
-            cont.invokeOnCancellation { mediaBrowser.disconnect() }
+            // 4. Bring your app back to the foreground (on main thread)
+            withContext(Dispatchers.Main) {
+                val packageManager = context.packageManager
+                val launchIntent = packageManager.getLaunchIntentForPackage(context.packageName)
+                launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (launchIntent != null) {
+                    context.startActivity(launchIntent)
+                    true
+                } else {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
         }
-
-        if (hiddenSucceeded) return true
-
-        /* ---------- visible fallback ---------- */
-        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-            setPackage("com.google.android.apps.youtube.music")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
-        }
-
-        return runCatching { context.startActivity(intent) }.isSuccess
     }
 }

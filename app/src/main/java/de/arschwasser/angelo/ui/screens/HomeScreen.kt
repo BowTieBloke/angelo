@@ -15,7 +15,6 @@ import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.core.SongDatabase
 import de.arschwasser.angelo.player.MusicServiceRegistry
 import de.arschwasser.angelo.qrscanner.PermissionedQRScanner
-import de.arschwasser.angelo.qrscanner.QRScanner
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
@@ -35,7 +34,7 @@ fun HomeScreen(nav: NavHostController) {
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
+            TopAppBar(
                 title = { Text("Angelo") },
                 actions = {
                     IconButton(onClick = { nav.navigate("settings") }) {
@@ -64,28 +63,34 @@ fun HomeScreen(nav: NavHostController) {
                     Text("Scan")
                 }
             } else {
-                PermissionedQRScanner { qr ->
-                    scanning = false
-                    scope.launch {
-                        val code = if (qr.contains("c=")) qr.substringAfter("c=") else qr
-                        val song = SongDatabase.get(ctx).songDao().findByCode(code)
-                        if (song != null) {
-                            val pref = PreferencesManager(ctx)
-                            val preferred = pref.serviceFlow.firstOrNull()
-                            val service = MusicServiceRegistry.availableServices(ctx)
-                                .find { it.name == preferred }
-                                ?: MusicServiceRegistry.availableServices(ctx).firstOrNull()
-                            if (service == null) {
-                                Toast.makeText(ctx, "No music service available", Toast.LENGTH_LONG).show()
-                                return@launch
+                PermissionedQRScanner(
+                    onCode = { qr ->
+                        scanning = false
+                        scope.launch {
+                            val code = if (qr.contains("c=")) qr.substringAfter("c=") else qr
+                            val song = SongDatabase.get(ctx).songDao().findByCode(code)
+                            if (song != null) {
+                                val pref = PreferencesManager(ctx)
+                                val preferred = pref.serviceFlow.firstOrNull()
+                                val service = MusicServiceRegistry.availableServices(ctx)
+                                    .find { it.name == preferred }
+                                    ?: MusicServiceRegistry.availableServices(ctx).firstOrNull()
+                                if (service == null) {
+                                    Toast.makeText(ctx, "No music service available", Toast.LENGTH_LONG).show()
+                                    return@launch
+                                }
+                                val ok = service.play(ctx, song)
+                                if (!ok) Toast.makeText(ctx, "Could not play song", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(ctx, "Song not found", Toast.LENGTH_LONG).show()
                             }
-                            val ok = service.play(ctx, song)
-                            if (!ok) Toast.makeText(ctx, "Could not play song", Toast.LENGTH_LONG).show()
-                        } else {
-                            Toast.makeText(ctx, "Song not found", Toast.LENGTH_LONG).show()
                         }
+                    },
+                    onCancel = {
+                        scanning = false
+                        Toast.makeText(ctx, "QR scan cancelled", Toast.LENGTH_SHORT).show()
                     }
-                }
+                )
             }
         }
     }

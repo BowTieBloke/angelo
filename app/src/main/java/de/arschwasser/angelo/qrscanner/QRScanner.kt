@@ -11,7 +11,13 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.layout.Box
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -20,17 +26,13 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
 import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.core.resolutionselector.ResolutionStrategy
-import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-
 
 @SuppressLint("RestrictedApi")
 @Composable
-fun QRScanner(onCode: (String) -> Unit) {
+fun QRScanner(
+    onCode: (String) -> Unit,
+    onCancel: () -> Unit
+) {
     Box {
         AndroidView(factory = { ctx ->
             val previewView = androidx.camera.view.PreviewView(ctx)
@@ -68,11 +70,24 @@ fun QRScanner(onCode: (String) -> Unit) {
             }, ContextCompat.getMainExecutor(ctx))
             previewView
         })
+
+        // Cancel Button overlay (top right corner)
+        Button(
+            onClick = onCancel,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Text("Cancel")
+        }
     }
 }
 
 @Composable
-fun PermissionedQRScanner(onCode: (String) -> Unit) {
+fun PermissionedQRScanner(
+    onCode: (String) -> Unit,
+    onCancel: () -> Unit
+) {
     var hasPermission by remember { mutableStateOf(false) }
     var permissionRequested by remember { mutableStateOf(false) }
 
@@ -88,7 +103,7 @@ fun PermissionedQRScanner(onCode: (String) -> Unit) {
     }
 
     when {
-        hasPermission -> QRScanner(onCode)
+        hasPermission -> QRScanner(onCode = onCode, onCancel = onCancel)
         permissionRequested -> Text("Camera permission denied. Enable it in settings.")
         else -> Text("We need the camera to scan QR codes.")
     }
