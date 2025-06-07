@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object CSVImporter {
-    suspend fun import(context: Context, bytes: ByteArray) {
+    suspend fun import(context: Context, bytes: ByteArray, fileName: String) {
         val dao = SongDatabase.get(context).songDao()
         val songs = withContext(Dispatchers.IO) {
             csvReader().readAllWithHeader(bytes.inputStream()).map { row ->
@@ -18,7 +18,7 @@ object CSVImporter {
                     code = row["code"] ?: "",
                     spotify = row["Spotify"],
                     youtube = row["YouTube"],
-                    amazon = row["Amazon"]
+                    edition = fileName
                 )
             }
         }

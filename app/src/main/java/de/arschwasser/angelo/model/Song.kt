@@ -12,5 +12,5 @@ data class Song(
     val code: String,
     val spotify: String?,
     val youtube: String?,
-    val amazon: String?
+    val edition: String?
 )

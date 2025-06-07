@@ -3,7 +3,6 @@ package de.arschwasser.angelo.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ fun SettingsScreen(nav: NavHostController) {
     val currentService by pref.serviceFlow.collectAsState(initial = null)
     val delayPref by pref.serviceDelayFlow.collectAsState(initial = pref.serviceDelayDefault)
     val services = MusicServiceRegistry.availableServices(ctx)
+    val gameVersion by pref.gameVersionFlow.collectAsState(initial = "Not selected")
 
     Scaffold(
         topBar = {
@@ -43,6 +43,7 @@ fun SettingsScreen(nav: NavHostController) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text("Version", style = MaterialTheme.typography.titleMedium)
+            Text(text = gameVersion)
             Button(onClick = { nav.navigate("selectVersion") }) {
                 Text("change")
             }

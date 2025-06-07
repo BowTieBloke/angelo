@@ -9,7 +9,6 @@ object MusicServiceRegistry {
         //ServiceType.SPOTIFY_PREMIUM to SpotifyPremiumService(),
         ServiceType.SPOTIFY_FREE to SpotifyFreeService(),
         ServiceType.YOUTUBE to YouTubeMusicService(),
-        ServiceType.AMAZON to AmazonMusicService()
     )
 
     fun get(type: ServiceType) = services[type]

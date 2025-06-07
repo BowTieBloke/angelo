@@ -12,13 +12,25 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 
 object PrefKeys {
     val SERVICE = stringPreferencesKey("service")
+    val GAME_VERSION = stringPreferencesKey("game_version")
 }
 
 class PreferencesManager(private val context: Context) {
+    val gameVersionDefault = "Not selected"
     val serviceFlow: Flow<String?> = context.dataStore.data.map { it[PrefKeys.SERVICE] }
+    val gameVersionFlow: Flow<String> = context.dataStore.data
+        .map { preferences -> preferences[PrefKeys.GAME_VERSION] ?: gameVersionDefault }
 
     suspend fun setService(service: String) {
         context.dataStore.edit { it[PrefKeys.SERVICE] = service }
+    }
+
+    suspend fun setGameVersion(version: String) {
+        context.dataStore.edit { it[PrefKeys.GAME_VERSION] = version }
+    }
+
+    suspend fun resetGameVersion() {
+        context.dataStore.edit { it[PrefKeys.GAME_VERSION] = gameVersionDefault }
     }
 
     companion object {
@@ -26,26 +38,22 @@ class PreferencesManager(private val context: Context) {
         private const val DEFAULT_SERVICE_DELAY = 500L
     }
 
-    // Flow to observe serviceDelay changes
     val serviceDelayFlow: Flow<Long> = context.dataStore.data
         .map { preferences ->
             preferences[SERVICE_DELAY] ?: DEFAULT_SERVICE_DELAY
         }
 
-    // Suspend function to update the delay
     suspend fun setServiceDelay(delay: Long) {
         context.dataStore.edit { preferences ->
             preferences[SERVICE_DELAY] = delay
         }
     }
 
-    // Suspend function to update the delay
     suspend fun resetServiceDelay() {
         context.dataStore.edit { preferences ->
             preferences[SERVICE_DELAY] = DEFAULT_SERVICE_DELAY
         }
     }
 
-    val serviceDelayDefault = DEFAULT_SERVICE_DELAY;
-
+    val serviceDelayDefault = DEFAULT_SERVICE_DELAY
 }
