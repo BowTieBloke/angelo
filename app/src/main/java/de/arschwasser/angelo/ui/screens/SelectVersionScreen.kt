@@ -80,21 +80,25 @@ fun SelectVersionScreen(nav: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Select game version", style = MaterialTheme.typography.titleLarge)
-            Button(onClick = {
-                scope.launch {
-                    val json = Downloader.getString(AppConfig.BASE_URL + AppConfig.CSV_LIST_PATH)
-                    val arr = JSONObject(json).getJSONArray("versions")
-                    if (arr.length() > 0) {
-                        val obj = arr.getJSONObject(0) // first entry for simplicity
-                        val bytes =
-                            Downloader.getBytes("${AppConfig.BASE_URL}/csv/${obj.getString("filename")}")
-                        val filename = obj.getString("filename")
-                        CSVImporter.import(ctx, bytes, filename)
-                        pref.setGameVersion(filename)
-                        nav.popBackStack()
+            Button(
+                onClick = {
+                    scope.launch {
+                        val json =
+                            Downloader.getString(AppConfig.BASE_URL + AppConfig.CSV_LIST_PATH)
+                        val arr = JSONObject(json).getJSONArray("versions")
+                        if (arr.length() > 0) {
+                            val obj = arr.getJSONObject(0) // first entry for simplicity
+                            val bytes =
+                                Downloader.getBytes("${AppConfig.BASE_URL}/csv/${obj.getString("filename")}")
+                            val filename = obj.getString("filename")
+                            CSVImporter.import(ctx, bytes, filename)
+                            pref.setGameVersion(filename)
+                            nav.popBackStack()
+                        }
                     }
-                }
-            }) { Text("Server") }
+                },
+                enabled = false
+            ) { Text("Server") }
 
             Button(onClick = { filePicker.launch("text/*") }) { Text("Custom") }
 

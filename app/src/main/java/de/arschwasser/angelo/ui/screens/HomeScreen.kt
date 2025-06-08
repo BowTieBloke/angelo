@@ -62,7 +62,11 @@ fun HomeScreen(nav: NavHostController) {
                 Button(
                     modifier = Modifier
                         .size(200.dp, 200.dp),
-                    onClick = { scanning = true }
+                    onClick = { scanning = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
                 ) {
                     Text("Scan")
                 }

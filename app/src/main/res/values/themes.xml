@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- One single theme for the whole app -->
+    <style name="Theme.Angelo" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- No legacy action‑bar / no title bar -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+        <!-- Optional edge‑to‑edge look -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+    </style>
+
+</resources>
