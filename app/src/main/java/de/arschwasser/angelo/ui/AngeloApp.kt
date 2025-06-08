@@ -8,11 +8,12 @@ import androidx.navigation.compose.rememberNavController
 import de.arschwasser.angelo.ui.screens.HomeScreen
 import de.arschwasser.angelo.ui.screens.SelectVersionScreen
 import de.arschwasser.angelo.ui.screens.SettingsScreen
+import de.arschwasser.angelo.ui.theme.AngeloTheme
 
 @Composable
 fun AngeloApp() {
     val nav = rememberNavController()
-    MaterialTheme {
+    AngeloTheme { // <-- Use your own theme here!
         NavHost(navController = nav, startDestination = "home") {
             composable("home") { HomeScreen(nav) }
             composable("selectVersion") { SelectVersionScreen(nav) }

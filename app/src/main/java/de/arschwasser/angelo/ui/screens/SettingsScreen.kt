@@ -32,7 +32,11 @@ fun SettingsScreen(nav: NavHostController) {
                     IconButton(onClick = { nav.popBackStack() }) {
                         Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
             )
         }
     ) { padding ->
