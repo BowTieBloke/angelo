@@ -40,7 +40,11 @@ fun HomeScreen(nav: NavHostController) {
                     IconButton(onClick = { nav.navigate("settings") }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
             )
         }
     ) { padding ->
@@ -76,11 +80,19 @@ fun HomeScreen(nav: NavHostController) {
                                     .find { it.name == preferred }
                                     ?: MusicServiceRegistry.availableServices(ctx).firstOrNull()
                                 if (service == null) {
-                                    Toast.makeText(ctx, "No music service available", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(
+                                        ctx,
+                                        "No music service available",
+                                        Toast.LENGTH_LONG
+                                    ).show()
                                     return@launch
                                 }
                                 val ok = service.play(ctx, song)
-                                if (!ok) Toast.makeText(ctx, "Could not play song", Toast.LENGTH_LONG).show()
+                                if (!ok) Toast.makeText(
+                                    ctx,
+                                    "Could not play song",
+                                    Toast.LENGTH_LONG
+                                ).show()
                             } else {
                                 Toast.makeText(ctx, "Song not found", Toast.LENGTH_LONG).show()
                             }
