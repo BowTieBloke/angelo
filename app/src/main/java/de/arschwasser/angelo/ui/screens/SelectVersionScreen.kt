@@ -1,9 +1,12 @@
 package de.arschwasser.angelo.ui.screens
 
 import android.net.Uri
+import android.os.Build
 import android.provider.OpenableColumns
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -12,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import de.arschwasser.angelo.core.AppConfig
@@ -22,9 +26,11 @@ import de.arschwasser.angelo.core.SongDatabase
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
+@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectVersionScreen(nav: NavHostController) {
+    val view = LocalView.current
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val pref = PreferencesManager(ctx)
@@ -60,7 +66,10 @@ fun SelectVersionScreen(nav: NavHostController) {
             TopAppBar(
                 title = { Text("Angelo") },
                 actions = {
-                    IconButton(onClick = { nav.popBackStack() }) {
+                    IconButton(onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                        nav.popBackStack()
+                    }) {
                         Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Back")
                     }
                 },
@@ -82,6 +91,7 @@ fun SelectVersionScreen(nav: NavHostController) {
             Text("Select game version", style = MaterialTheme.typography.titleLarge)
             Button(
                 onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                     scope.launch {
                         val json =
                             Downloader.getString(AppConfig.BASE_URL + AppConfig.CSV_LIST_PATH)
@@ -93,6 +103,7 @@ fun SelectVersionScreen(nav: NavHostController) {
                             val filename = obj.getString("filename")
                             CSVImporter.import(ctx, bytes, filename)
                             pref.setGameVersion(filename)
+                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                             nav.popBackStack()
                         }
                     }
@@ -100,9 +111,13 @@ fun SelectVersionScreen(nav: NavHostController) {
                 enabled = false
             ) { Text("Server") }
 
-            Button(onClick = { filePicker.launch("text/*") }) { Text("Custom") }
+            Button(onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                filePicker.launch("text/*")
+            }) { Text("Custom") }
 
             Button(onClick = {
+                view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                 scope.launch {
                     SongDatabase.get(ctx).songDao().clear()
                     pref.resetGameVersion()

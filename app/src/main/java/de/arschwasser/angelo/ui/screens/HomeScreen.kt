@@ -1,6 +1,9 @@
 package de.arschwasser.angelo.ui.screens
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavHostController
@@ -26,14 +30,15 @@ import de.arschwasser.angelo.qrscanner.PermissionedQRScanner
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
+@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(nav: NavHostController) {
-
     /* ───────────────────────── state ───────────────────────── */
-    val ctx   = LocalContext.current
+    val view = LocalView.current
+    val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
-    var scanning    by remember { mutableStateOf(false) }
+    var scanning by remember { mutableStateOf(false) }
     var songsLoaded by remember { mutableStateOf(false) }
 
     /* do we already have songs? */
@@ -45,7 +50,6 @@ fun HomeScreen(nav: NavHostController) {
     val barColor = MaterialTheme.colorScheme.primaryContainer
     val statusBar by animateColorAsState(barColor)          // nice fade if the colour changes
 
-    val view = LocalView.current
     /* edge to edge status bar colour */
     SideEffect {
         (view.context as? android.app.Activity)
@@ -63,7 +67,10 @@ fun HomeScreen(nav: NavHostController) {
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                 ),
                 actions = {
-                    IconButton(onClick = { nav.navigate("settings") }) {
+                    IconButton(onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                        nav.navigate("settings")
+                    }) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                 }
@@ -79,14 +86,17 @@ fun HomeScreen(nav: NavHostController) {
                 .padding(padding)
                 .imePadding(),                         // plays nicely with keyboard
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment   = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
             when {
                 /* first‑time users choose game version */
                 !songsLoaded -> {
                     FilledTonalButton(
-                        onClick = { nav.navigate("selectVersion") },
+                        onClick = {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                            nav.navigate("selectVersion")
+                        },
                         contentPadding = PaddingValues(horizontal = 32.dp, vertical = 12.dp)
                     ) { Text("Select game version") }
                 }
@@ -100,7 +110,10 @@ fun HomeScreen(nav: NavHostController) {
                         )
                     )
                     FilledTonalButton(
-                        onClick = { scanning = true },
+                        onClick = {
+                            scanning = true
+                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                        },
                         shape = CircleShape,
                         modifier = Modifier
                             .size(220.dp)
@@ -126,6 +139,7 @@ fun HomeScreen(nav: NavHostController) {
                                 val code = qr.substringAfter("c=", qr)
                                 val song = SongDatabase.get(ctx).songDao().findByCode(code)
                                 if (song == null) {
+                                    view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                                     Toast.makeText(ctx, "Song not found", Toast.LENGTH_LONG).show()
                                     return@launch
                                 }
@@ -136,13 +150,18 @@ fun HomeScreen(nav: NavHostController) {
                                     .find { it.name == preferred }
                                     ?: MusicServiceRegistry.availableServices(ctx).first()
                                 if (!service.play(ctx, song)) {
-                                    Toast.makeText(ctx,"Could not play song",Toast.LENGTH_LONG).show()
+                                    view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                                    Toast.makeText(ctx, "Could not play song", Toast.LENGTH_LONG)
+                                        .show()
+                                } else {
+                                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                                 }
                             }
                         },
                         onCancel = {
                             scanning = false
-                            Toast.makeText(ctx,"QR scan cancelled",Toast.LENGTH_SHORT).show()
+                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                            Toast.makeText(ctx, "QR scan cancelled", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
