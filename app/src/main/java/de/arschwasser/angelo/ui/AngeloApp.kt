@@ -1,5 +1,7 @@
 package de.arschwasser.angelo.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
@@ -10,6 +12,7 @@ import de.arschwasser.angelo.ui.screens.SelectVersionScreen
 import de.arschwasser.angelo.ui.screens.SettingsScreen
 import de.arschwasser.angelo.ui.theme.AngeloTheme
 
+@RequiresApi(Build.VERSION_CODES.R)
 @Composable
 fun AngeloApp() {
     val nav = rememberNavController()
