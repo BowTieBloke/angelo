@@ -10,5 +10,14 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/black</item>
     </style>
+    <!-- Android 12+ SplashScreen (keeps same artwork automatically) -->
+    <style name="Theme.Angelo.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Matches same drawable so older & newer behave the same -->
+        <item name="android:windowSplashScreenBackground">@color/anglo_launcher_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/logo_inset</item>
+        <item name="android:windowSplashScreenAnimationDuration">500</item>
+        <!-- (optional) keep_on_screen until Compose is ready -->
+        <item name="postSplashScreenTheme">@style/Theme.Angelo</item>
+    </style>
 
 </resources>

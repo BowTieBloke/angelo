@@ -1,8 +1,6 @@
 package de.arschwasser.angelo.ui.screens
 
-import android.os.Build
 import android.view.HapticFeedbackConstants
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -17,7 +15,6 @@ import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.player.MusicServiceRegistry
 import kotlinx.coroutines.launch
 
-@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(nav: NavHostController) {

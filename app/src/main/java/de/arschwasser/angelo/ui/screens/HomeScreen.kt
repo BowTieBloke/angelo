@@ -1,9 +1,7 @@
 package de.arschwasser.angelo.ui.screens
 
-import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,7 +56,6 @@ fun AppBackground(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(nav: NavHostController) {
@@ -106,11 +103,12 @@ fun HomeScreen(nav: NavHostController) {
                 )
             },
         ) { padding ->
-            AppBackground(modifier = Modifier.padding(padding)) {
+            AppBackground {
                 /* ------- actual screen content ------- */
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .padding(padding)
                         .imePadding(),                         // plays nicely with keyboard
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally

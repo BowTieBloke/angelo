@@ -19,7 +19,7 @@
         android:icon="@mipmap/anglo_launcher"
         android:label="Angelo"
         android:roundIcon="@mipmap/anglo_launcher_round"
-        android:theme="@style/Theme.Angelo">
+        android:theme="@style/Theme.Angelo.Splash">
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,12 +1,10 @@
 package de.arschwasser.angelo.ui.screens
 
 import android.net.Uri
-import android.os.Build
 import android.provider.OpenableColumns
 import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
@@ -26,7 +24,6 @@ import de.arschwasser.angelo.core.SongDatabase
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-@RequiresApi(Build.VERSION_CODES.R)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectVersionScreen(nav: NavHostController) {
