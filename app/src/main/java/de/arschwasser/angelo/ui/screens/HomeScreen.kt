@@ -35,6 +35,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import de.arschwasser.angelo.R
 
 @Composable
 fun AppBackground(
@@ -148,9 +150,10 @@ fun HomeScreen(nav: NavHostController) {
                                 elevation = ButtonDefaults.buttonElevation(0.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.QrCodeScanner,
+                                    painter = painterResource(R.drawable.angelo_note),
                                     contentDescription = "Scan QR code",
-                                    modifier = Modifier.size(40.dp)
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,   // any colour
+                                    modifier = Modifier.size(48.dp)
                                 )
                             }
                         }
