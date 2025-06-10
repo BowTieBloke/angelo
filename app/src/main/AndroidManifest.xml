@@ -16,9 +16,9 @@
 
 
     <application
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/anglo_launcher"
         android:label="Angelo"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/anglo_launcher_round"
         android:theme="@style/Theme.Angelo">
         <activity
             android:name=".MainActivity"
