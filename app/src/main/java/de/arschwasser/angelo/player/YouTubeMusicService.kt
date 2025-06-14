@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
 import de.arschwasser.angelo.core.PreferencesManager
+import de.arschwasser.angelo.core.ScreenCover
 import de.arschwasser.angelo.model.Song
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -24,8 +25,9 @@ class YouTubeMusicService : MusicService {
 
     override suspend fun play(context: Context, song: Song): Boolean {
         return try {
-            // 1. Open the song in YouTube Music (on main thread)
+            // 1. Cover the screen and open the song in YouTube Music (on main thread)
             withContext(Dispatchers.Main) {
+                ScreenCover.show(context)
                 val ytMusicIntent = Intent(Intent.ACTION_VIEW).apply {
                     data = song.youtube?.toUri()
                     setPackage("com.google.android.apps.youtube.music")
@@ -48,8 +50,10 @@ class YouTubeMusicService : MusicService {
                 launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 if (launchIntent != null) {
                     context.startActivity(launchIntent)
+                    ScreenCover.hide()
                     true
                 } else {
+                    ScreenCover.hide()
                     false
                 }
             }
