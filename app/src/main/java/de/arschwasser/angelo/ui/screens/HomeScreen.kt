@@ -1,5 +1,7 @@
 package de.arschwasser.angelo.ui.screens
 
+import android.app.Activity
+import android.content.Context
 import android.view.HapticFeedbackConstants
 import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
@@ -8,7 +10,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +28,8 @@ import de.arschwasser.angelo.qrscanner.PermissionedQRScanner
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
+import android.provider.Settings
+import android.content.Intent
 
 
 import androidx.compose.foundation.layout.Box
@@ -37,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import de.arschwasser.angelo.R
+import androidx.core.net.toUri
 
 @Composable
 fun AppBackground(
@@ -57,6 +61,74 @@ fun AppBackground(
     ) { content() }
 }
 
+fun hasOverlayPermission(context: Context): Boolean {
+    return Settings.canDrawOverlays(context)
+}
+
+fun requestOverlayPermission(activity: Activity) {
+    if (!Settings.canDrawOverlays(activity)) {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            "package:${activity.packageName}".toUri()
+        )
+        activity.startActivity(intent)
+    }
+}
+
+@Composable
+fun OverlayPermissionDialog(
+    onRequest: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { /* Don't dismiss */ },
+        title = { Text("Berechtigung erforderlich") },
+        text = {
+            Text(
+                "Um Spielen zu können, musst du Angelo die Berechtigung \"Über anderen Apps einblenden\" geben."
+            )
+        },
+        confirmButton = {
+            Button(onClick = onRequest) {
+                Text("Berechtigung erteilen")
+            }
+        }
+    )
+}
+
+@Composable
+fun PermissionedHomeScreen(nav: NavHostController) {
+    val context = LocalContext.current
+    val activity = context as? Activity
+    var showPermissionDialog by remember { mutableStateOf(false) }
+
+    // Always check on entering the screen and on resume
+    LaunchedEffect(Unit) {
+        showPermissionDialog = !hasOverlayPermission(context)
+    }
+
+    // Re-check on resume (important, since the user can come back from settings!)
+    DisposableEffect(Unit) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                showPermissionDialog = !hasOverlayPermission(context)
+            }
+        }
+        val lifecycle = (context as? androidx.lifecycle.LifecycleOwner)?.lifecycle
+        lifecycle?.addObserver(observer)
+        onDispose { lifecycle?.removeObserver(observer) }
+    }
+
+    if (showPermissionDialog) {
+        OverlayPermissionDialog(
+            onRequest = {
+                activity?.let { requestOverlayPermission(it) }
+            }
+        )
+    } else {
+        // Only show your actual HomeScreen when permission is granted!
+        HomeScreen(nav)
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

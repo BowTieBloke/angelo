@@ -6,9 +6,11 @@ import androidx.core.net.toUri
 import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.core.ScreenCover
 import de.arschwasser.angelo.model.Song
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class YouTubeMusicService : MusicService {
@@ -23,11 +25,18 @@ class YouTubeMusicService : MusicService {
         false
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override suspend fun play(context: Context, song: Song): Boolean {
         return try {
+            val coverView = ScreenCover.show(context)
+            // Launch a coroutine to auto-hide after 10s (even if play logic hangs)
+            val overlayTimeoutJob = kotlinx.coroutines.GlobalScope.launch(Dispatchers.Main) {
+                delay(10_000)
+                ScreenCover.hide(context, coverView)
+            }
+
             // 1. Cover the screen and open the song in YouTube Music (on main thread)
             withContext(Dispatchers.Main) {
-                ScreenCover.show(context)
                 val ytMusicIntent = Intent(Intent.ACTION_VIEW).apply {
                     data = song.youtube?.toUri()
                     setPackage("com.google.android.apps.youtube.music")
@@ -50,10 +59,12 @@ class YouTubeMusicService : MusicService {
                 launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 if (launchIntent != null) {
                     context.startActivity(launchIntent)
-                    ScreenCover.hide()
+                    ScreenCover.hide(context, coverView)
+                    overlayTimeoutJob.cancel() // Cancel the auto-hide if not needed
                     true
                 } else {
-                    ScreenCover.hide()
+                    ScreenCover.hide(context, coverView)
+                    overlayTimeoutJob.cancel()
                     false
                 }
             }
@@ -62,4 +73,5 @@ class YouTubeMusicService : MusicService {
             false
         }
     }
+
 }

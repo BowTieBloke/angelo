@@ -18,6 +18,7 @@ object CSVImporter {
                     code = row["code"] ?: "",
                     spotify = row["Spotify"],
                     youtube = row["YouTube"],
+                    album = row["Album"],
                     edition = fileName
                 )
             }
