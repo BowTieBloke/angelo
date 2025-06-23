@@ -23,10 +23,13 @@ import androidx.compose.ui.unit.*
 import androidx.navigation.NavHostController
 import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.core.SongDatabase
+import de.arschwasser.angelo.core.CSVImporter
 import de.arschwasser.angelo.player.MusicServiceRegistry
 import de.arschwasser.angelo.qrscanner.PermissionedQRScanner
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 import androidx.compose.ui.graphics.Color
 import android.provider.Settings
 import android.content.Intent
@@ -141,9 +144,21 @@ fun HomeScreen(nav: NavHostController) {
         var scanning by remember { mutableStateOf(false) }
         var songsLoaded by remember { mutableStateOf(false) }
 
-        /* do we already have songs? */
+        /* initialise database if empty */
         LaunchedEffect(Unit) {
-            songsLoaded = SongDatabase.get(ctx).songDao().count() > 0
+            val dao = SongDatabase.get(ctx).songDao()
+            if (dao.count() == 0) {
+                try {
+                    val bytes = withContext(Dispatchers.IO) {
+                        ctx.assets.open("default_songs.csv").use { it.readBytes() }
+                    }
+                    CSVImporter.import(ctx, bytes, "default_songs.csv")
+                    PreferencesManager(ctx).setGameVersion("default_songs.csv")
+                } catch (e: Exception) {
+                    // Bundled CSV missing or unreadable
+                }
+            }
+            songsLoaded = dao.count() > 0
         }
 
         /* ───────────────────────── scaffold ────────────────────── */

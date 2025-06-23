@@ -92,22 +92,21 @@ fun SelectVersionScreen(nav: NavHostController) {
                 onClick = {
                     view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                     scope.launch {
-                        val json =
-                            Downloader.getString(AppConfig.BASE_URL + AppConfig.CSV_LIST_PATH)
-                        val arr = JSONObject(json).getJSONArray("versions")
-                        if (arr.length() > 0) {
-                            val obj = arr.getJSONObject(0) // first entry for simplicity
-                            val bytes =
-                                Downloader.getBytes("${AppConfig.BASE_URL}/csv/${obj.getString("filename")}")
-                            val filename = obj.getString("filename")
-                            CSVImporter.import(ctx, bytes, filename)
-                            pref.setGameVersion(filename)
-                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                            nav.popBackStack()
-                        }
+                        val url =
+                            "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyp8b7UmapJwCy033FMglAABejMpNQB0ezt2dCTR-CSh1WqLB3L0xjTkA1zr6_pEyDnmbIkS9X40CC/pub?gid=0&single=true&output=csv"
+                        // previous server import:
+                        // val json = Downloader.getString(AppConfig.BASE_URL + AppConfig.CSV_LIST_PATH)
+                        // val arr = JSONObject(json).getJSONArray("versions")
+                        // val obj = arr.getJSONObject(0)
+                        // val oldUrl = "${'$'}{AppConfig.BASE_URL}/csv/${'$'}{obj.getString("filename")}"
+                        val bytes = Downloader.getBytes(url)
+                        CSVImporter.import(ctx, bytes, "server.csv")
+                        pref.setGameVersion("server.csv")
+                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                        nav.popBackStack()
                     }
                 },
-                enabled = false
+                enabled = true
             ) { Text("Server") }
 
             Button(onClick = {
