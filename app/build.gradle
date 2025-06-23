@@ -14,8 +14,6 @@ android {
         targetSdk 34
         versionCode 1
         versionName "0.2.0"
-
-        manifestPlaceholders = [spotifyRedirectScheme: "angelo"]
     }
 
     buildFeatures {
@@ -32,6 +30,11 @@ android {
 
     kotlinOptions {
         jvmTarget = '17'
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.debug
+        }
     }
 }
 
@@ -88,7 +91,6 @@ dependencies {
     implementation "androidx.camera:camera-view:${camerax_version}"
 
 
-
     // DataStore
     implementation "androidx.datastore:datastore-preferences:1.1.7"
 
@@ -100,9 +102,6 @@ dependencies {
 
     // CSV
     implementation "com.github.doyaaaaaken:kotlin-csv-jvm:1.9.3"
-
-    // Spotify SDK
-    implementation files("libs/spotify-app-remote-release-0.8.0.aar")
 
     // Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0"
