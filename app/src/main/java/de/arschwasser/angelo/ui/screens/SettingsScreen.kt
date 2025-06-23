@@ -12,7 +12,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import de.arschwasser.angelo.core.PreferencesManager
-import de.arschwasser.angelo.player.MusicServiceRegistry
+//import de.arschwasser.angelo.player.MusicServiceRegistry
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -22,9 +22,9 @@ fun SettingsScreen(nav: NavHostController) {
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     val pref = remember { PreferencesManager(ctx) }
-    val currentService by pref.serviceFlow.collectAsState(initial = null)
+//    val currentService by pref.serviceFlow.collectAsState(initial = null)
     val delayPref by pref.serviceDelayFlow.collectAsState(initial = pref.serviceDelayDefault)
-    val services = MusicServiceRegistry.availableServices(ctx)
+//    val services = MusicServiceRegistry.availableServices(ctx)
     val gameVersion by pref.gameVersionFlow.collectAsState(initial = "Not selected")
 
     Scaffold(
@@ -62,19 +62,19 @@ fun SettingsScreen(nav: NavHostController) {
             }) {
                 Text("change")
             }
-            Text("Preferred service", style = MaterialTheme.typography.titleMedium)
-            services.forEach { srv ->
-                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                    RadioButton(
-                        selected = srv.name == currentService,
-                        onClick = {
-                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
-                            scope.launch { pref.setService(srv.name) }
-                        }
-                    )
-                    Text("${srv.name}${if (!srv.recommended) " (not recommended – screen flashes)" else ""}")
-                }
-            }
+//            Text("Preferred service", style = MaterialTheme.typography.titleMedium)
+//            services.forEach { srv ->
+//                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+//                    RadioButton(
+//                        selected = srv.name == currentService,
+//                        onClick = {
+//                            view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+//                            scope.launch { pref.setService(srv.name) }
+//                        }
+//                    )
+//                    Text("${srv.name}${if (!srv.recommended) " (not recommended – screen flashes)" else ""}")
+//                }
+//            }
             Text("Service delay", style = MaterialTheme.typography.titleMedium)
 
             // Use remember to prevent recomposition loop on Slider

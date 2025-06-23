@@ -16,7 +16,8 @@ object CSVImporter {
                     artist = row["artist"] ?: "",
                     year = row["year"]?.toIntOrNull() ?: 0,
                     code = row["code"] ?: "",
-                    spotify = row["Spotify"],
+//                    spotify = row["Spotify"],
+                    spotify = null,
                     youtube = row["YouTube"],
                     album = row["Album"],
                     edition = fileName

@@ -2,12 +2,17 @@ package de.arschwasser.angelo.player
 
 import android.content.Context
 
-enum class ServiceType { SPOTIFY_PREMIUM, SPOTIFY_FREE, YOUTUBE, AMAZON }
+enum class ServiceType {
+    YOUTUBE
+//    ,SPOTIFY_PREMIUM
+//    ,SPOTIFY_FREE
+//    ,AMAZON
+}
 
 object MusicServiceRegistry {
     private val services = mapOf(
         //ServiceType.SPOTIFY_PREMIUM to SpotifyPremiumService(),
-        ServiceType.SPOTIFY_FREE to SpotifyFreeService(),
+        //ServiceType.SPOTIFY_FREE to SpotifyFreeService(),
         ServiceType.YOUTUBE to YouTubeMusicService(),
     )
 
