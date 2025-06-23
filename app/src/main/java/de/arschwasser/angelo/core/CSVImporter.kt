@@ -12,14 +12,15 @@ object CSVImporter {
         val songs = withContext(Dispatchers.IO) {
             csvReader().readAllWithHeader(bytes.inputStream()).map { row ->
                 Song(
-                    title = row["Title"] ?: "",
-                    artist = row["artist"] ?: "",
-                    year = row["year"]?.toIntOrNull() ?: 0,
-                    code = row["code"] ?: "",
+                    title = row["Title"] ?: row["title"] ?: "",
+                    artist = row["artist"] ?: row["Artist"] ?: "",
+                    year = row["year"]?.toIntOrNull()
+                        ?: row["Year"]?.toIntOrNull() ?: 0,
+                    code = row["code"] ?: row["Code"] ?: "",
 //                    spotify = row["Spotify"],
                     spotify = null,
-                    youtube = row["YouTube"],
-                    album = row["Album"],
+                    youtube = row["YouTube"] ?: row["youtube"],
+                    album = row["Album"] ?: row["album"],
                     edition = fileName
                 )
             }
