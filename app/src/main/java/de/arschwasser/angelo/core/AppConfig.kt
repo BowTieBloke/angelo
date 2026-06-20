@@ -2,7 +2,8 @@ package de.arschwasser.angelo.core
 
 object AppConfig {
     var BASE_URL = "https://angelo.arschwasser.de"
-    const val CSV_LIST_PATH = "/csv/list.json"
+    var SERVER_CSV_URL =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyp8b7UmapJwCy033FMglAABejMpNQB0ezt2dCTR-CSh1WqLB3L0xjTkA1zr6_pEyDnmbIkS9X40CC/pub?gid=1496881467&single=true&output=csv"
     const val UPDATE_JSON = "/app/update.json"
     var CONNECT_TIMEOUT_MS = 3_000
     var READ_TIMEOUT_MS = 8_000

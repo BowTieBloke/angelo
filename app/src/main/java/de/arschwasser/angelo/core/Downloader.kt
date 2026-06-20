@@ -4,10 +4,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 object Downloader {
 
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(AppConfig.CONNECT_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+        .readTimeout(AppConfig.READ_TIMEOUT_MS.toLong(), TimeUnit.MILLISECONDS)
+        .build()
 
     /** Blocking byte download – MUST run off-UI thread */
     suspend fun getBytes(url: String): ByteArray =

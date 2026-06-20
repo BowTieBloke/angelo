@@ -7,9 +7,9 @@ pluginManagement {
         flatDir { dirs("$rootDir/app/libs") }
     }
     plugins {
-        id "com.android.application" version "8.1.1"  // or 8.1.0 – must match your wrapper
-        id "com.android.library" version "8.1.1"
-        id "org.jetbrains.kotlin.android" version "1.9.24"   // latest 1.9.x
+        id "com.android.application" version "8.10.1"
+        id "com.android.library" version "8.10.1"
+        id "org.jetbrains.kotlin.android" version "1.9.23"
     }
 }
 

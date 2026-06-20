@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavHostController
 import de.arschwasser.angelo.core.PreferencesManager
+import de.arschwasser.angelo.core.QrCodeParser
 import de.arschwasser.angelo.core.SongDatabase
 import de.arschwasser.angelo.core.CSVImporter
 import de.arschwasser.angelo.player.MusicServiceRegistry
@@ -251,7 +252,13 @@ fun HomeScreen(nav: NavHostController) {
                                 onCode = { qr ->
                                     scanning = false
                                     scope.launch {
-                                        val code = qr.substringAfter("c=", qr)
+                                        val code = QrCodeParser.extractCode(qr)
+                                        if (code == null) {
+                                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                                            Toast.makeText(ctx, "Invalid QR code", Toast.LENGTH_LONG)
+                                                .show()
+                                            return@launch
+                                        }
                                         val song = SongDatabase.get(ctx).songDao().findByCode(code)
                                         if (song == null) {
                                             view.performHapticFeedback(HapticFeedbackConstants.REJECT)
@@ -261,10 +268,18 @@ fun HomeScreen(nav: NavHostController) {
                                         }
                                         val pref = PreferencesManager(ctx)
                                         val preferred = pref.serviceFlow.firstOrNull()
-                                        val service = MusicServiceRegistry
-                                            .availableServices(ctx)
-                                            .find { it.name == preferred }
-                                            ?: MusicServiceRegistry.availableServices(ctx).first()
+                                        val services = MusicServiceRegistry.availableServices(ctx)
+                                        val service = services.find { it.name == preferred }
+                                            ?: services.firstOrNull()
+                                        if (service == null) {
+                                            view.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                                            Toast.makeText(
+                                                ctx,
+                                                "No supported music service installed",
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                            return@launch
+                                        }
                                         if (!service.play(ctx, song)) {
                                             view.performHapticFeedback(HapticFeedbackConstants.REJECT)
                                             Toast.makeText(

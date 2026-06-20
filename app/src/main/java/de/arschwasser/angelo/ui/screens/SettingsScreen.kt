@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import de.arschwasser.angelo.core.PreferencesManager
+import de.arschwasser.angelo.update.Updater
 //import de.arschwasser.angelo.player.MusicServiceRegistry
 import kotlinx.coroutines.launch
 
@@ -26,6 +27,9 @@ fun SettingsScreen(nav: NavHostController) {
     val delayPref by pref.serviceDelayFlow.collectAsState(initial = pref.serviceDelayDefault)
 //    val services = MusicServiceRegistry.availableServices(ctx)
     val gameVersion by pref.gameVersionFlow.collectAsState(initial = "Not selected")
+    var updateBusy by remember { mutableStateOf(false) }
+    var updateInfo by remember { mutableStateOf<Updater.Info?>(null) }
+    var updateStatus by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -62,6 +66,69 @@ fun SettingsScreen(nav: NavHostController) {
             }) {
                 Text("change")
             }
+
+            HorizontalDivider()
+            Text("Update", style = MaterialTheme.typography.titleMedium)
+            Button(
+                enabled = !updateBusy,
+                onClick = {
+                    view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                    updateBusy = true
+                    updateInfo = null
+                    updateStatus = "Suche nach Update..."
+                    scope.launch {
+                        try {
+                            val info = Updater.check()
+                            updateInfo = info
+                            updateStatus = if (info == null) {
+                                "Keine Aktualisierung verfügbar."
+                            } else {
+                                "Version ${info.versionName} ist verfügbar."
+                            }
+                        } catch (_: Exception) {
+                            updateStatus = "Updateprüfung fehlgeschlagen. Die App kann offline weiter genutzt werden."
+                        } finally {
+                            updateBusy = false
+                        }
+                    }
+                }
+            ) {
+                Text(if (updateBusy) "Bitte warten..." else "Nach Update suchen")
+            }
+            updateInfo?.let { info ->
+                if (info.changelog.isNotBlank()) {
+                    Text(info.changelog)
+                }
+                Button(
+                    enabled = !updateBusy,
+                    onClick = {
+                        view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                        if (!Updater.canRequestPackageInstalls(ctx)) {
+                            updateStatus = "Bitte Installation aus unbekannten Quellen erlauben und danach erneut starten."
+                            Updater.openInstallPermissionSettings(ctx)
+                        } else {
+                            updateBusy = true
+                            updateStatus = "Lade Update herunter..."
+                            scope.launch {
+                                try {
+                                    val apk = Updater.download(ctx, info)
+                                    updateStatus = "Öffne Installation..."
+                                    Updater.install(ctx, apk)
+                                } catch (_: Updater.IntegrityException) {
+                                    updateStatus = "Download beschädigt oder falsche APK. Installation wurde abgebrochen."
+                                } catch (_: Exception) {
+                                    updateStatus = "Download fehlgeschlagen. Die App kann offline weiter genutzt werden."
+                                } finally {
+                                    updateBusy = false
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    Text("Update herunterladen")
+                }
+            }
+            updateStatus?.let { Text(it) }
 //            Text("Preferred service", style = MaterialTheme.typography.titleMedium)
 //            services.forEach { srv ->
 //                Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {

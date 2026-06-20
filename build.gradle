@@ -7,11 +7,11 @@ subprojects {
     configurations.configureEach {
         resolutionStrategy {
             // Kotlin core
-            force "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
-            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
-            force "org.jetbrains.kotlin:kotlin-reflect:1.9.24"
+            force "org.jetbrains.kotlin:kotlin-stdlib:1.9.23"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.23"
+            force "org.jetbrains.kotlin:kotlin-reflect:1.9.23"
             // kapt / annotation processors, if you use them
-            force "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.24"
+            force "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:1.9.23"
         }
     }
 }

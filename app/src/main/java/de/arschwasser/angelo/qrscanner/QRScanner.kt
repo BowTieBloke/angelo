@@ -33,6 +33,8 @@ fun QRScanner(
     onCode: (String) -> Unit,
     onCancel: () -> Unit
 ) {
+    var handled by remember { mutableStateOf(false) }
+
     Box {
         AndroidView(factory = { ctx ->
             val previewView = androidx.camera.view.PreviewView(ctx)
@@ -57,7 +59,12 @@ fun QRScanner(
                 ).setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST).build()
 
                 analysis.setAnalyzer(ContextCompat.getMainExecutor(ctx)) { proxy ->
-                    process(proxy, scanner) { qr -> onCode(qr) }
+                    process(proxy, scanner) { qr ->
+                        if (!handled) {
+                            handled = true
+                            onCode(qr)
+                        }
+                    }
                 }
 
                 cameraProvider.unbindAll()

@@ -22,7 +22,6 @@ import de.arschwasser.angelo.core.Downloader
 import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.core.SongDatabase
 import kotlinx.coroutines.launch
-import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,14 +91,7 @@ fun SelectVersionScreen(nav: NavHostController) {
                 onClick = {
                     view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                     scope.launch {
-                        val url =
-                            "https://docs.google.com/spreadsheets/d/e/2PACX-1vTyp8b7UmapJwCy033FMglAABejMpNQB0ezt2dCTR-CSh1WqLB3L0xjTkA1zr6_pEyDnmbIkS9X40CC/pub?gid=0&single=true&output=csv"
-                        // previous server import:
-                        // val json = Downloader.getString(AppConfig.BASE_URL + AppConfig.CSV_LIST_PATH)
-                        // val arr = JSONObject(json).getJSONArray("versions")
-                        // val obj = arr.getJSONObject(0)
-                        // val oldUrl = "${'$'}{AppConfig.BASE_URL}/csv/${'$'}{obj.getString("filename")}"
-                        val bytes = Downloader.getBytes(url)
+                        val bytes = Downloader.getBytes(AppConfig.SERVER_CSV_URL)
                         CSVImporter.import(ctx, bytes, "server.csv")
                         pref.setGameVersion("server.csv")
                         view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
