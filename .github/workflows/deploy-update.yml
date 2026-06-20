@@ -183,8 +183,31 @@ jobs:
           install -m 600 /dev/null ~/.ssh/id_deploy
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
           ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+          read -r deploy_git_host deploy_git_port < <(python3 - <<'PY'
+          import os
+          import re
+          from urllib.parse import urlparse
+
+          remote = os.environ.get("DEPLOY_GIT_REMOTE", "")
+          if remote.startswith("ssh://"):
+              parsed = urlparse(remote)
+              print(parsed.hostname or "", parsed.port or "")
+          else:
+              match = re.match(r"(?:[^@]+@)?([^:/]+)[:/]", remote)
+              print(match.group(1) if match else "", "")
+          PY
+          )
+          if [[ -n "$deploy_git_host" && ( "$deploy_git_host" != "$DEPLOY_HOST" || -n "$deploy_git_port" ) ]]; then
+            if [[ -n "$deploy_git_port" ]]; then
+              ssh-keyscan -H -p "$deploy_git_port" "$deploy_git_host" >> ~/.ssh/known_hosts
+            else
+              ssh-keyscan -H "$deploy_git_host" >> ~/.ssh/known_hosts
+            fi
+          fi
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_GIT_REMOTE: ${{ secrets.DEPLOY_GIT_REMOTE }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
 
       - name: Commit artifacts to deploy repository
@@ -230,11 +253,10 @@ jobs:
             echo "DEPLOY_USER secret is missing" >&2
             exit 1
           fi
-          ssh -i ~/.ssh/id_deploy "$DEPLOY_USER@$DEPLOY_HOST" "$DEPLOY_PULL_COMMAND"
+          ssh -i ~/.ssh/id_deploy "$DEPLOY_USER@$DEPLOY_HOST" "cd /var/www/vhosts/arschwasser.de/angelo.arschwasser.de && git pull --ff-only"
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          3: cd /var/www/vhosts/arschwasser.de/angelo.arschwasser.de && git pull --ff-only
 
       - name: Verify deployed files
         shell: bash
