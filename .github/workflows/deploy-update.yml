@@ -1,0 +1,264 @@
+name: Build and deploy update
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  APP_ID: de.arschwasser.angelo
+  UPDATE_JSON_URL: https://angelo.arschwasser.de/app/update.json
+  PUBLIC_APK_PATH_PREFIX: /downloads/apk
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Read app version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version_code="$(grep -E '^[[:space:]]*versionCode[[:space:]]+[0-9]+' app/build.gradle | awk '{print $2}')"
+          version_name="$(grep -E '^[[:space:]]*versionName[[:space:]]+"' app/build.gradle | sed -E 's/.*versionName[[:space:]]+"([^"]+)".*/\1/')"
+
+          if [[ -z "$version_code" || -z "$version_name" ]]; then
+            echo "Could not read versionCode/versionName from app/build.gradle" >&2
+            exit 1
+          fi
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" != "v${version_name}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match versionName ${version_name}" >&2
+            exit 1
+          fi
+
+          echo "code=${version_code}" >> "$GITHUB_OUTPUT"
+          echo "name=${version_name}" >> "$GITHUB_OUTPUT"
+          echo "apk_name=angelo-${version_name}.apk" >> "$GITHUB_OUTPUT"
+
+      - name: Check deployed version
+        shell: bash
+        run: |
+          set -euo pipefail
+          current_code="$(python3 - <<'PY'
+          import json
+          import sys
+          import urllib.request
+
+          url = "https://angelo.arschwasser.de/app/update.json"
+          try:
+              with urllib.request.urlopen(url, timeout=15) as response:
+                  data = json.load(response)
+              print(int(data.get("versionCode", 0)))
+          except Exception as exc:
+              print(f"Could not read deployed update.json: {exc}", file=sys.stderr)
+              sys.exit(1)
+          PY
+          )"
+
+          new_code="${{ steps.version.outputs.code }}"
+          if (( new_code <= current_code )); then
+            echo "versionCode ${new_code} must be greater than deployed versionCode ${current_code}" >&2
+            exit 1
+          fi
+
+      - name: Decode release keystore
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${ANDROID_KEYSTORE_BASE64:-}" ]]; then
+            echo "ANDROID_KEYSTORE_BASE64 secret is missing" >&2
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/angelo-release.keystore"
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
+      - name: Build release APK
+        shell: bash
+        run: ./gradlew assembleRelease --no-configuration-cache
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/angelo-release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Verify APK metadata
+        id: apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk="app/build/outputs/apk/release/app-release.apk"
+          if [[ ! -f "$apk" ]]; then
+            echo "Release APK not found at $apk" >&2
+            exit 1
+          fi
+
+          aapt="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+
+          badging="$("$aapt" dump badging "$apk")"
+          package_name="$(sed -nE "s/^package: name='([^']+)'.*/\1/p" <<< "$badging")"
+          apk_code="$(sed -nE "s/^package:.* versionCode='([^']+)'.*/\1/p" <<< "$badging")"
+          apk_name="$(sed -nE "s/^package:.* versionName='([^']+)'.*/\1/p" <<< "$badging")"
+
+          if [[ "$package_name" != "$APP_ID" ]]; then
+            echo "APK package ${package_name} does not match ${APP_ID}" >&2
+            exit 1
+          fi
+          if [[ "$apk_code" != "${{ steps.version.outputs.code }}" ]]; then
+            echo "APK versionCode ${apk_code} does not match Gradle versionCode ${{ steps.version.outputs.code }}" >&2
+            exit 1
+          fi
+          if [[ "$apk_name" != "${{ steps.version.outputs.name }}" ]]; then
+            echo "APK versionName ${apk_name} does not match Gradle versionName ${{ steps.version.outputs.name }}" >&2
+            exit 1
+          fi
+
+          "$apksigner" verify --print-certs "$apk"
+
+          sha256="$(sha256sum "$apk" | awk '{print $1}')"
+          size="$(stat -c%s "$apk")"
+          final_apk="${{ steps.version.outputs.apk_name }}"
+          cp "$apk" "$final_apk"
+
+          echo "path=${final_apk}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha256}" >> "$GITHUB_OUTPUT"
+          echo "size=${size}" >> "$GITHUB_OUTPUT"
+
+      - name: Create update.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+
+          data = {
+              "versionCode": int(os.environ["VERSION_CODE"]),
+              "versionName": os.environ["VERSION_NAME"],
+              "apkUrl": f'{os.environ["PUBLIC_APK_PATH_PREFIX"]}/{os.environ["APK_NAME"]}',
+              "size": int(os.environ["APK_SIZE"]),
+              "sha256": os.environ["APK_SHA256"],
+          }
+
+          with open("update.json", "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          PY
+          cat update.json
+        env:
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+          VERSION_NAME: ${{ steps.version.outputs.name }}
+          APK_NAME: ${{ steps.version.outputs.apk_name }}
+          APK_SIZE: ${{ steps.apk.outputs.size }}
+          APK_SHA256: ${{ steps.apk.outputs.sha256 }}
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          install -m 600 /dev/null ~/.ssh/id_deploy
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Commit artifacts to deploy repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DEPLOY_GIT_REMOTE:-}" ]]; then
+            echo "DEPLOY_GIT_REMOTE secret is missing" >&2
+            exit 1
+          fi
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes"
+
+          deploy_branch="${DEPLOY_GIT_BRANCH:-main}"
+          git clone --branch "$deploy_branch" "$DEPLOY_GIT_REMOTE" deploy-repo
+
+          mkdir -p "deploy-repo/${DEPLOY_APK_REPO_DIR}" "deploy-repo/${DEPLOY_UPDATE_JSON_REPO_DIR}"
+          cp "${{ steps.apk.outputs.path }}" "deploy-repo/${DEPLOY_APK_REPO_DIR}/${{ steps.version.outputs.apk_name }}"
+          cp update.json "deploy-repo/${DEPLOY_UPDATE_JSON_REPO_DIR}/update.json"
+
+          cd deploy-repo
+          git config user.name "Angelo Release Bot"
+          git config user.email "angelo-release-bot@users.noreply.github.com"
+          git add "${DEPLOY_APK_REPO_DIR}/${{ steps.version.outputs.apk_name }}" "${DEPLOY_UPDATE_JSON_REPO_DIR}/update.json"
+
+          if git diff --cached --quiet; then
+            echo "No deploy repository changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Deploy Angelo ${{ steps.version.outputs.name }}"
+          git push origin "$deploy_branch"
+        env:
+          DEPLOY_GIT_REMOTE: ${{ secrets.DEPLOY_GIT_REMOTE }}
+          DEPLOY_GIT_BRANCH: ${{ vars.DEPLOY_GIT_BRANCH }}
+          DEPLOY_APK_REPO_DIR: ${{ vars.DEPLOY_APK_REPO_DIR || 'downloads/apk' }}
+          DEPLOY_UPDATE_JSON_REPO_DIR: ${{ vars.DEPLOY_UPDATE_JSON_REPO_DIR || 'app' }}
+
+      - name: Pull deploy repository on server
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DEPLOY_USER:-}" ]]; then
+            echo "DEPLOY_USER secret is missing" >&2
+            exit 1
+          fi
+          ssh -i ~/.ssh/id_deploy "$DEPLOY_USER@$DEPLOY_HOST" "$DEPLOY_PULL_COMMAND"
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          3: cd /var/www/vhosts/arschwasser.de/angelo.arschwasser.de && git pull --ff-only
+
+      - name: Verify deployed files
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error "$UPDATE_JSON_URL" > deployed-update.json
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import urllib.request
+
+          with open("deployed-update.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+
+          expected_code = int(os.environ["VERSION_CODE"])
+          expected_hash = os.environ["APK_SHA256"]
+          if data["versionCode"] != expected_code:
+              raise SystemExit(f"deployed versionCode {data['versionCode']} != {expected_code}")
+          if data["sha256"] != expected_hash:
+              raise SystemExit("deployed update.json sha256 does not match built APK")
+
+          apk_url = "https://angelo.arschwasser.de" + data["apkUrl"]
+          with urllib.request.urlopen(apk_url, timeout=60) as response:
+              digest = hashlib.sha256(response.read()).hexdigest()
+          if digest != expected_hash:
+              raise SystemExit("deployed APK hash does not match update.json")
+          PY
+        env:
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+          APK_SHA256: ${{ steps.apk.outputs.sha256 }}
