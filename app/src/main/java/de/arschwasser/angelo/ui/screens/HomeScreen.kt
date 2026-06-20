@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavHostController
+import de.arschwasser.angelo.core.HashUtils
 import de.arschwasser.angelo.core.PreferencesManager
 import de.arschwasser.angelo.core.QrCodeParser
 import de.arschwasser.angelo.core.SongDatabase
@@ -148,16 +149,24 @@ fun HomeScreen(nav: NavHostController) {
         /* initialise database if empty */
         LaunchedEffect(Unit) {
             val dao = SongDatabase.get(ctx).songDao()
-            if (dao.count() == 0) {
-                try {
-                    val bytes = withContext(Dispatchers.IO) {
-                        ctx.assets.open("default_songs.csv").use { it.readBytes() }
-                    }
-                    CSVImporter.import(ctx, bytes, "default_songs.csv")
-                    PreferencesManager(ctx).setGameVersion("default_songs.csv")
-                } catch (e: Exception) {
-                    // Bundled CSV missing or unreadable
+            val pref = PreferencesManager(ctx)
+            try {
+                val bytes = withContext(Dispatchers.IO) {
+                    ctx.assets.open("default_songs.csv").use { it.readBytes() }
                 }
+                val defaultSongsHash = HashUtils.sha256(bytes)
+                val gameVersion = pref.gameVersionFlow.firstOrNull()
+                val storedDefaultSongsHash = pref.defaultSongsHashFlow.firstOrNull()
+                val shouldImportDefaultSongs = dao.count() == 0 ||
+                    (gameVersion == "default_songs.csv" && storedDefaultSongsHash != defaultSongsHash)
+
+                if (shouldImportDefaultSongs) {
+                    CSVImporter.import(ctx, bytes, "default_songs.csv")
+                    pref.setGameVersion("default_songs.csv")
+                    pref.setDefaultSongsHash(defaultSongsHash)
+                }
+            } catch (e: Exception) {
+                // Bundled CSV missing or unreadable
             }
             songsLoaded = dao.count() > 0
         }

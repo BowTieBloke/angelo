@@ -13,6 +13,7 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 object PrefKeys {
     val SERVICE = stringPreferencesKey("service")
     val GAME_VERSION = stringPreferencesKey("game_version")
+    val DEFAULT_SONGS_HASH = stringPreferencesKey("default_songs_hash")
 }
 
 class PreferencesManager(private val context: Context) {
@@ -20,6 +21,8 @@ class PreferencesManager(private val context: Context) {
     val serviceFlow: Flow<String?> = context.dataStore.data.map { it[PrefKeys.SERVICE] }
     val gameVersionFlow: Flow<String> = context.dataStore.data
         .map { preferences -> preferences[PrefKeys.GAME_VERSION] ?: gameVersionDefault }
+    val defaultSongsHashFlow: Flow<String?> =
+        context.dataStore.data.map { preferences -> preferences[PrefKeys.DEFAULT_SONGS_HASH] }
 
     suspend fun setService(service: String) {
         context.dataStore.edit { it[PrefKeys.SERVICE] = service }
@@ -29,8 +32,15 @@ class PreferencesManager(private val context: Context) {
         context.dataStore.edit { it[PrefKeys.GAME_VERSION] = version }
     }
 
+    suspend fun setDefaultSongsHash(hash: String) {
+        context.dataStore.edit { it[PrefKeys.DEFAULT_SONGS_HASH] = hash }
+    }
+
     suspend fun resetGameVersion() {
-        context.dataStore.edit { it[PrefKeys.GAME_VERSION] = gameVersionDefault }
+        context.dataStore.edit {
+            it[PrefKeys.GAME_VERSION] = gameVersionDefault
+            it.remove(PrefKeys.DEFAULT_SONGS_HASH)
+        }
     }
 
     companion object {
