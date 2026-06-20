@@ -4,6 +4,8 @@ plugins {
     id("kotlin-kapt")
 }
 
+def releaseKeystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+
 android {
     namespace 'de.arschwasser.angelo'
     compileSdk 34
@@ -12,8 +14,8 @@ android {
         applicationId 'de.arschwasser.angelo'
         minSdk 30
         targetSdk 34
-        versionCode 3
-        versionName "0.4.1"
+        versionCode 4
+        versionName "0.4.2"
     }
 
     buildFeatures {
@@ -31,9 +33,19 @@ android {
     kotlinOptions {
         jvmTarget = '17'
     }
+    signingConfigs {
+        release {
+            if (releaseKeystorePath) {
+                storeFile file(releaseKeystorePath)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            signingConfig releaseKeystorePath ? signingConfigs.release : signingConfigs.debug
         }
     }
 }
